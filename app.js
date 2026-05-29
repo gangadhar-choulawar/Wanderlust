@@ -1,15 +1,18 @@
-console.log("DEBUG: Attempting to load routers...");
+// 1. Initializations first
+const express = require("express");
+const app = express(); // <--- app must be defined here first
 
+// 2. Then require the routers
 const listingRouter = require("./routes/listing.js");
-console.log("DEBUG: Listing Router loaded. Type:", typeof listingRouter);
-
 const reviewRouter = require("./routes/review.js");
-console.log("DEBUG: Review Router loaded. Type:", typeof reviewRouter);
-
 const userRouter = require("./routes/user.js");
-console.log("DEBUG: User Router loaded. Type:", typeof userRouter);
 
-// Only use if they are actually functions
-if (typeof listingRouter === 'function') app.use("/listings", listingRouter);
-if (typeof reviewRouter === 'function') app.use("/listings/:id/reviews", reviewRouter);
-if (typeof userRouter === 'function') app.use("/", userRouter);
+// 3. Now perform your debug/use logic
+console.log("DEBUG: Listing Router loaded. Type:", typeof listingRouter);
+app.use("/listings", listingRouter);
+
+console.log("DEBUG: Review Router loaded. Type:", typeof reviewRouter);
+app.use("/listings/:id/reviews", reviewRouter);
+
+console.log("DEBUG: User Router loaded. Type:", typeof userRouter);
+app.use("/", userRouter);
