@@ -71,9 +71,42 @@ module.exports.destroyListing = async (req, res) => {
 module.exports.discover = async (req, res) => {
     try {
         const { location, country, prompt } = req.body;
+        
+        // 1. Generate Content from the model
         const result = await model.generateContent(`Tell me about ${location}, ${country}. ${prompt}`);
-        res.json({ answer: result.response.text() });
+        
+        // 2. Extract the response object correctly
+        const response = await result.response;
+        
+        // 3. Resolve the text string cleanly
+        const aiText = response.text();
+        
+        // 4. Return the JSON payload back to your EJS template script
+        res.json({ answer: aiText });
     } catch (err) {
+        // This will print the actual error to your Render logs window if something else drops
+        console.error("CRITICAL ERROR IN DISCOVER ROUTE:", err);
+        res.status(500).json({ error: "AI service unavailable." });
+    }
+};
+module.exports.discover = async (req, res) => {
+    try {
+        const { location, country, prompt } = req.body;
+        
+        // 1. Generate Content from the model
+        const result = await model.generateContent(`Tell me about ${location}, ${country}. ${prompt}`);
+        
+        // 2. Extract the response object correctly
+        const response = await result.response;
+        
+        // 3. Resolve the text string cleanly
+        const aiText = response.text();
+        
+        // 4. Return the JSON payload back to your EJS template script
+        res.json({ answer: aiText });
+    } catch (err) {
+        // This will print the actual error to your Render logs window if something else drops
+        console.error("CRITICAL ERROR IN DISCOVER ROUTE:", err);
         res.status(500).json({ error: "AI service unavailable." });
     }
 };
