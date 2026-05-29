@@ -4,8 +4,8 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 // Initialize the core Google Generative AI client instance securely using your Render Environment Variables
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// UPGRADED: Fully utilizing your newly updated SDK package to run the modern 1.5 Flash engine
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// FIXED: Migrated to an active production model to fix the 404 endpoint rejection entirely
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 // Display all listings on the home dashboard
 module.exports.index = async (req, res) => {
