@@ -3,19 +3,29 @@ const router = express.Router();
 const wrapAsync = require("../utils/wrapAsync.js");
 const ListingController = require("../controllers/listings.js");
 const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
-// ... other imports ...
+const multer = require('multer');
+const { storage } = require("../cloudConfig.js");
+const upload = multer({ storage });
 
-// Place AI route HERE to avoid being caught by /:id
+// Debugging: Check if controller methods exist
+if (typeof ListingController.discover !== 'function') {
+    throw new Error("CRITICAL: ListingController.discover is NOT a function. Check your controller exports.");
+}
+
+// Routes
 router.post("/discover", wrapAsync(ListingController.discover));
 
-// Other routes...
 router.get("/", wrapAsync(ListingController.index));
+
 router.get("/new", isLoggedIn, ListingController.renderNewForm);
+
 router.post("/", isLoggedIn, upload.single("listing[image]"), validateListing, wrapAsync(ListingController.createListing));
 
 router.route("/:id")
     .get(wrapAsync(ListingController.showListing))
     .put(isLoggedIn, isOwner, upload.single("listing[image]"), validateListing, wrapAsync(ListingController.updateListing))
     .delete(isLoggedIn, isOwner, wrapAsync(ListingController.destroyListing));
+
+router.get("/:id/edit", isLoggedIn, isOwner, wrapAsync(ListingController.renderEditForm));
 
 module.exports = router;
