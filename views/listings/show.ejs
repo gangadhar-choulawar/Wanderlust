@@ -124,15 +124,16 @@
         aiInput.value = "";
 
         try {
-            const response = await fetch(`/listings/<%= listing._id %>/discover`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    location: "<%= listing.location %>",
-                    country: "<%= listing.country %>",
-                    prompt: prompt
-                })
-            });
+           // Change this line in your script:
+const response = await fetch(`/listings/discover`, { // Removed /<%= listing._id %>
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        location: "<%= listing.location %>",
+        country: "<%= listing.country %>",
+        prompt: prompt
+    })
+});
 
             const data = await response.json();
             

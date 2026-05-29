@@ -9,16 +9,52 @@ module.exports.index = async (req, res) => {
     res.render("listings/index.ejs", { allListings, category: null, search: null });
 };
 
-module.exports.discover = async (req, res) => { /* logic */ };
+module.exports.showListing = async (req, res) => {
+    let { id } = req.params;
+    const listing = await Listing.findById(id).populate("reviews");
+    
+    if (!listing) {
+        req.flash("error", "Listing does not exist!");
+        return res.redirect("/listings");
+    }
+    
+    res.render("listings/show.ejs", { listing });
+};
 
-module.exports.renderNewForm = (req, res) => { /* logic */ };
+module.exports.renderNewForm = (req, res) => {
+    res.render("listings/new.ejs");
+};
 
-module.exports.createListing = async (req, res) => { /* logic */ };
+module.exports.createListing = async (req, res) => {
+    const newListing = new Listing(req.body.listing);
+    await newListing.save();
+    res.redirect(`/listings/${newListing._id}`);
+};
 
-module.exports.showListing = async (req, res) => { /* logic */ };
+module.exports.renderEditForm = async (req, res) => {
+    let { id } = req.params;
+    const listing = await Listing.findById(id);
+    res.render("listings/edit.ejs", { listing });
+};
 
-module.exports.renderEditForm = async (req, res) => { /* logic */ };
+module.exports.updateListing = async (req, res) => {
+    let { id } = req.params;
+    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+    res.redirect(`/listings/${id}`);
+};
 
-module.exports.updateListing = async (req, res) => { /* logic */ };
+module.exports.destroyListing = async (req, res) => {
+    let { id } = req.params;
+    await Listing.findByIdAndDelete(id);
+    res.redirect("/listings");
+};
 
-module.exports.destroyListing = async (req, res) => { /* logic */ };
+module.exports.discover = async (req, res) => {
+    try {
+        const { location, country, prompt } = req.body;
+        const result = await model.generateContent(`Tell me about ${location}, ${country}. ${prompt}`);
+        res.json({ answer: result.response.text() });
+    } catch (err) {
+        res.status(500).json({ error: "AI service unavailable." });
+    }
+};

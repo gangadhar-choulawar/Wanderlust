@@ -7,10 +7,10 @@ const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
 // Index Route
 router.get("/", wrapAsync(ListingController.index));
 
-// New Route (Must be before /:id)
+// New Route (Static path BEFORE dynamic path)
 router.get("/new", isLoggedIn, ListingController.renderNewForm);
 
-// Show Route
+// Show Route (Dynamic path AFTER static path)
 router.get("/:id", wrapAsync(ListingController.showListing));
 
 // Create Route
