@@ -1,18 +1,38 @@
-// 1. Initializations first
-const express = require("express");
-const app = express(); // <--- app must be defined here first
+// ... [Your imports at the top] ...
 
-// 2. Then require the routers
-const listingRouter = require("./routes/listing.js");
-const reviewRouter = require("./routes/review.js");
-const userRouter = require("./routes/user.js");
+async function initApp() {
+    // 1. Database Connection
+    await mongoose.connect(process.env.ATLASDB_URL);
+    console.log("Connected to DB");
 
-// 3. Now perform your debug/use logic
-console.log("DEBUG: Listing Router loaded. Type:", typeof listingRouter);
-app.use("/listings", listingRouter);
+    // 2. Session Store
+    const store = MongoStore.create({
+        mongoUrl: process.env.ATLASDB_URL,
+        crypto: { secret: process.env.SECRET },
+        touchAfter: 24 * 3600,
+    });
 
-console.log("DEBUG: Review Router loaded. Type:", typeof reviewRouter);
-app.use("/listings/:id/reviews", reviewRouter);
+    // 3. Middlewares (Passport, Session, EJS, etc.)
+    app.engine('ejs', ejsMate);
+    app.set("view engine", "ejs");
+    app.set("views", path.join(__dirname, "views"));
+    app.use(express.urlencoded({ extended: true }));
+    app.use(session({ store, secret: process.env.SECRET, ... }));
+    app.use(passport.initialize());
+    app.use(passport.session());
 
-console.log("DEBUG: User Router loaded. Type:", typeof userRouter);
-app.use("/", userRouter);
+    // 4. Routers
+    const listingRouter = require("./routes/listing.js");
+    app.use("/listings", listingRouter);
+    // ...
+
+    // 5. Start Server
+    const port = process.env.PORT || 8080;
+    app.listen(port, () => console.log(`Server listening on port ${port}`));
+}
+
+// EXECUTION
+initApp().catch(err => {
+    console.error("FATAL INITIALIZATION ERROR:", err);
+    process.exit(1);
+});
