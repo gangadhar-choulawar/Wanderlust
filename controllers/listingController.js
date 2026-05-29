@@ -5,7 +5,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // FIXED: Migrated to an active production model to fix the 404 endpoint rejection entirely
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
 // Display all listings on the home dashboard
 module.exports.index = async (req, res) => {
