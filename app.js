@@ -42,6 +42,10 @@ async function initApp() {
     app.use(passport.initialize());
     app.use(passport.session());
 
+
+    app.get("/", (req, res) => {
+        res.redirect("/listings");
+    });
     // 4. Routers
     const listingRouter = require("./routes/listing.js");
     const reviewRouter = require("./routes/review.js");
