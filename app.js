@@ -66,9 +66,10 @@ async function initApp() {
     app.use("/", userRouter);
 
     // 6. 404 Handler (Updated syntax for path-to-regexp)
-    app.all("*", (req, res, next) => {
-        res.status(404).send("Page Not Found");
-    });
+    // 6. 404 Handler
+app.use((req, res, next) => {
+    res.status(404).send("Page Not Found");
+});
 
     // 7. Global Error Handler
     app.use((err, req, res, next) => {
