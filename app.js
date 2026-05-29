@@ -1,6 +1,4 @@
-if(process.env.NODE_ENV != "production"){
-    require('dotenv').config();
-}
+if(process.env.NODE_ENV != "production"){ require('dotenv').config(); }
 
 const express = require("express");
 const app = express();
@@ -21,14 +19,12 @@ const reviewRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
 const dbUrl = process.env.ATLASDB_URL;
-
 async function main() { await mongoose.connect(dbUrl); }
 main().then(() => console.log("connected to DB")).catch(err => console.log(err));
 
 app.engine('ejs', ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride("_method"));
@@ -40,19 +36,7 @@ const store = MongoStore.create({
     touchAfter: 24 * 3600,
 });
 
-const sessionOptions = {
-    store,
-    secret: process.env.SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-    },
-};
-
-app.use(session(sessionOptions));
+app.use(session({ store, secret: process.env.SECRET, resave: false, saveUninitialized: true, cookie: { expires: Date.now() + 7 * 24 * 60 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true }}));
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
@@ -67,23 +51,18 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- ADDED ROOT REDIRECT HERE ---
-app.get("/", (req, res) => {
-    res.redirect("/listings");
-});
-// --------------------------------
+app.get("/", (req, res) => { res.redirect("/listings"); });
 
+// ROUTER SECTION - IF IT CRASHES, CHECK EXPORTS IN THE ROUTER FILES
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
 
 app.all(/(.*)/, (req, res, next) => { next(new ExpressError(404, "Page Not Found!")); });
-
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
     res.status(statusCode).send(message);
 });
 
-// app.listen(8080, () => console.log("server is listening to port 8080"));
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log(`Server is listening on port ${port}`));
