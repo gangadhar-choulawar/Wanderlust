@@ -12,30 +12,38 @@ async function initApp() {
         touchAfter: 24 * 3600,
     });
 
-    // 3. Middlewares (Passport, Session, EJS, etc.)
+    // 3. Middlewares
     app.engine('ejs', ejsMate);
     app.set("view engine", "ejs");
     app.set("views", path.join(__dirname, "views"));
     app.use(express.urlencoded({ extended: true }));
-    app.use(session({ store, secret: process.env.SECRET, ... }));
+    app.use(express.json());
+
+    // --- SINGLE SESSION MIDDLEWARE BLOCK ---
+    app.use(session({ 
+        store, 
+        secret: process.env.SECRET, 
+        resave: false, 
+        saveUninitialized: true,
+        cookie: {
+            expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+        }
+    }));
+    // ---------------------------------------
+
     app.use(passport.initialize());
     app.use(passport.session());
 
     // 4. Routers
     const listingRouter = require("./routes/listing.js");
-  // Replace the entire app.use(session(...)) block with this:
-app.use(session({ 
-    store, 
-    secret: process.env.SECRET, 
-    resave: false, 
-    saveUninitialized: true,
-    cookie: {
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        httpOnly: true,
-    }
-}));
-    // ...
+    const reviewRouter = require("./routes/review.js");
+    const userRouter = require("./routes/user.js");
+
+    app.use("/listings", listingRouter);
+    app.use("/listings/:id/reviews", reviewRouter);
+    app.use("/", userRouter);
 
     // 5. Start Server
     const port = process.env.PORT || 8080;
