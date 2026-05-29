@@ -19,18 +19,44 @@
             <p class="card-text"><%= listing.country %></p>
         </div>
     </div>
+</div>
 
-    <% if(currUser && currUser._id.equals(listing.owner._id)) { %>
-    <div class="btns mb-3">
-        <a href="/listings/<%= listing._id %>/edit" class="btn btn-dark col-1 offset-3 edit-btn">Edit</a>
-        <form method="POST" action="/listings/<%= listing._id %>?_method=DELETE">
-            <button class="btn btn-dark offset-5">Delete</button>
-        </form>
+<hr>
+
+<div class="row">
+    <div class="col-8 offset-3 mb-3 border p-4 rounded shadow-sm bg-light">
+        <h3 style="color: #fe424d !important; font-weight: bold;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Discover the Neighborhood
+        </h3>
+        <p class="text-muted">Ask our AI about local gems, hidden pubs, or transit tips!</p>
+        
+        <div class="input-group mb-3">
+            <input type="text" id="ai-prompt" class="form-control" placeholder="e.g. Are there any popular rooftop bars nearby?">
+            <button class="btn btn-dark" type="button" id="ai-btn">Ask AI</button>
+        </div>
+
+        <div id="ai-loader" class="d-none text-center">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2 text-danger">Consulting Wanderlust AI Expert...</p>
+        </div>
+        
+        <div id="ai-response" class="p-3 border rounded d-none" style="background-color: white; border-left: 5px solid #fe424d !important;"></div>
     </div>
-    <% } %>
+</div>
 
-    <div class="col-8 offset-3 mb-3">
+<div class="row">
+    <div class="col-8 offset-3">
+        <% if(currUser && currUser._id.equals(listing.owner._id)) { %>
+        <div class="btns mb-3">
+            <a href="/listings/<%= listing._id %>/edit" class="btn btn-dark edit-btn">Edit</a>
+            <form method="POST" action="/listings/<%= listing._id %>?_method=DELETE" class="ms-3">
+                <button class="btn btn-dark">Delete</button>
+            </form>
+        </div>
+        <% } %>
+
         <hr />
+        
         <% if(currUser) { %>
         <h4>Leave a Review</h4>
         <form action="/listings/<%= listing.id %>/reviews" method="POST" novalidate class="needs-validation">
@@ -65,7 +91,7 @@
         <div class="row">
             <% for(review of listing.reviews) { %>
             <div class="card col-5 ms-3 mb-3">
-                <div class="card-body">
+                <div class="card-body p-2">
                     <h5 class="card-title">@<%= review.author.username %></h5>
                     <p class="starability-result card-text" data-rating="<%= review.rating %>"></p>
                     <p class="card-text"><%= review.comment %></p>
@@ -81,3 +107,50 @@
         <% } %>
     </div>
 </div>
+
+<script>
+    const aiBtn = document.getElementById("ai-btn");
+    const aiInput = document.getElementById("ai-prompt");
+    const aiResponse = document.getElementById("ai-response");
+    const aiLoader = document.getElementById("ai-loader");
+
+    aiBtn.addEventListener("click", async () => {
+        const prompt = aiInput.value;
+        if (!prompt) return alert("Please enter a question!");
+
+        // Show loader and hide old response
+        aiLoader.classList.remove("d-none");
+        aiResponse.classList.add("d-none");
+        aiInput.value = "";
+
+        try {
+            const response = await fetch(`/listings/<%= listing._id %>/discover`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    location: "<%= listing.location %>",
+                    country: "<%= listing.country %>",
+                    prompt: prompt
+                })
+            });
+
+            const data = await response.json();
+            
+            // Hide loader and show response
+            aiLoader.classList.add("d-none");
+            aiResponse.classList.remove("d-none");
+            
+            // Format Bold text and line breaks from AI
+            const formattedAnswer = data.answer
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, "<br>");
+
+            aiResponse.innerHTML = `<strong><i class="fa-solid fa-robot"></i> AI Travel Expert:</strong> <hr> ${formattedAnswer}`;
+            
+        } catch (error) {
+            console.error("Error:", error);
+            aiLoader.classList.add("d-none");
+            alert("Could not connect to the AI service. Please try again.");
+        }
+    });
+</script>

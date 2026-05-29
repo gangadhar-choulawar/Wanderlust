@@ -97,7 +97,18 @@ body{
     padding-left: 0;
     padding-right: 0;
 }
+#ai-response {
+    background-color: #ffffff;
+    border-left: 4px solid #fe424d; /* Matches the Wanderlust theme color */
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #444;
+}
 
+#ai-response strong {
+    color: #fe424d;
+}
 /*Map*/
 
 /* #map { 
