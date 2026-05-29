@@ -11,6 +11,8 @@ module.exports.index = async (req, res) => {
 
 module.exports.showListing = async (req, res) => {
     let { id } = req.params;
+    
+    // 1. Fetch listing and populate its reviews
     const listing = await Listing.findById(id).populate("reviews");
     
     if (!listing) {
@@ -18,7 +20,24 @@ module.exports.showListing = async (req, res) => {
         return res.redirect("/listings");
     }
     
-    res.render("listings/show.ejs", { listing });
+    // 2. Initialize a default string for safety
+    let aiRecommendations = "";
+
+    try {
+        // 3. Request tailored information from Gemini about this specific listing
+        const aiPrompt = `You are a localized expert travel guide. The user is viewing a vacation listing titled "${listing.title}" located in "${listing.location}, ${listing.country}". Provide exactly 3 short, highly unique bullet points of local hidden gems, must-do activities, or local food recommendations right near this area. Keep it concise.`;
+        
+        const result = await model.generateContent(aiPrompt);
+        const response = await result.response;
+        aiRecommendations = response.text();
+    } catch (apiErr) {
+        console.error("Gemini API Error in showListing:", apiErr);
+        // Fallback text so your page still loads beautifully even if the API quota drops
+        aiRecommendations = "• Local travel tips are temporarily unavailable. Enjoy your stay!";
+    }
+    
+    // 4. Pass 'aiRecommendations' right into your EJS template alongside the listing object
+    res.render("listings/show.ejs", { listing, aiRecommendations });
 };
 
 module.exports.renderNewForm = (req, res) => {

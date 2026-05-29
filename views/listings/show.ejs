@@ -124,16 +124,22 @@
         aiInput.value = "";
 
         try {
-           // Change this line in your script:
-const response = await fetch(`/listings/discover`, { // Removed /<%= listing._id %>
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-        location: "<%= listing.location %>",
-        country: "<%= listing.country %>",
-        prompt: prompt
-    })
-});
+            // Absolute URL mapping directly to your /listings namespace
+            const response = await fetch("/listings/discover", { 
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    location: "<%= listing.location %>",
+                    country: "<%= listing.country %>",
+                    prompt: prompt
+                })
+            });
+
+            // If the server returns a 500 error instead of normal JSON data
+            if (!response.ok) {
+                aiLoader.classList.add("d-none");
+                return alert(`AI Error (${response.status}): The server rejected the AI integration request. Please check your API credentials.`);
+            }
 
             const data = await response.json();
             
@@ -149,9 +155,9 @@ const response = await fetch(`/listings/discover`, { // Removed /<%= listing._id
             aiResponse.innerHTML = `<strong><i class="fa-solid fa-robot"></i> AI Travel Expert:</strong> <hr> ${formattedAnswer}`;
             
         } catch (error) {
-            console.error("Error:", error);
+            console.error("Error details:", error);
             aiLoader.classList.add("d-none");
-            alert("Could not connect to the AI service. Please try again.");
+            alert("Could not complete the request. Check your internet connection or console logs.");
         }
     });
 </script>
