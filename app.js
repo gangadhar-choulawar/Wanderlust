@@ -1,4 +1,4 @@
-if(process.env.NODE_ENV !="production"){
+if(process.env.NODE_ENV != "production"){
     require('dotenv').config();
 }
 
@@ -30,7 +30,7 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); // <--- CRITICAL FOR AI FETCH
+app.use(express.json());
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "/public")));
 
@@ -66,6 +66,12 @@ app.use((req, res, next) => {
     res.locals.currUser = req.user;
     next();
 });
+
+// --- ADDED ROOT REDIRECT HERE ---
+app.get("/", (req, res) => {
+    res.redirect("/listings");
+});
+// --------------------------------
 
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
