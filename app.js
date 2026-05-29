@@ -9,24 +9,31 @@ const MongoStore = require("connect-mongo");
 const passport = require("passport");
 const flash = require("connect-flash");
 
+// Import Routes
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
+
 async function initApp() {
     // 1. Database Connection
     await mongoose.connect(process.env.ATLASDB_URL);
-    console.log("Connected to DB");
+    console.log("Connected to MongoDB Atlas");
 
-    // 2. Session Store Setup
+    // 2. View Engine & Middlewares
+    app.engine('ejs', ejsMate);
+    app.set("view engine", "ejs");
+    app.set("views", path.join(__dirname, "views"));
+    
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
+    app.use(express.static(path.join(__dirname, "public"))); // Crucial for CSS/JS
+
+    // 3. Session Store
     const store = MongoStore.create({
         mongoUrl: process.env.ATLASDB_URL,
         crypto: { secret: process.env.SECRET },
         touchAfter: 24 * 3600,
     });
-
-    // 3. View Engine & Middlewares
-    app.engine('ejs', ejsMate);
-    app.set("view engine", "ejs");
-    app.set("views", path.join(__dirname, "views"));
-    app.use(express.urlencoded({ extended: true }));
-    app.use(express.json());
 
     app.use(session({ 
         store, 
@@ -44,7 +51,7 @@ async function initApp() {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    // 4. Global Local Variables
+    // 4. Global Variables
     app.use((req, res, next) => {
         res.locals.currUser = req.user;
         res.locals.success = req.flash("success");
@@ -53,24 +60,27 @@ async function initApp() {
     });
 
     // 5. Routes
-    app.get("/", (req, res) => {
-        res.redirect("/listings");
-    });
-
-    const listingRouter = require("./routes/listing.js");
-    const reviewRouter = require("./routes/review.js");
-    const userRouter = require("./routes/user.js");
-
+    app.get("/", (req, res) => res.redirect("/listings"));
     app.use("/listings", listingRouter);
     app.use("/listings/:id/reviews", reviewRouter);
     app.use("/", userRouter);
 
-    // 6. Server Start
+    // 6. 404 Handler
+    app.all("*", (req, res, next) => {
+        res.status(404).send("Page Not Found");
+    });
+
+    // 7. Global Error Handler
+    app.use((err, req, res, next) => {
+        let { statusCode = 500, message = "Something went wrong" } = err;
+        res.status(statusCode).render("error.ejs", { message });
+    });
+
+    // 8. Server Start
     const port = process.env.PORT || 8080;
     app.listen(port, () => console.log(`Server listening on port ${port}`));
 }
 
-// 7. Initialization Error Handling
 initApp().catch(err => {
     console.error("FATAL INITIALIZATION ERROR:", err);
     process.exit(1);
