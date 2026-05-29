@@ -1,11 +1,11 @@
 const Listing = require("../models/listing");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Google Generative AI securely using your Render Environment Variables
+// Initialize the core Google Generative AI client instance securely using your Render Environment Variables
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// FIXED: Using "gemini-pro" to align perfectly with the v1beta API version expected by your current SDK build
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// UPGRADED: Fully utilizing your newly updated SDK package to run the modern 1.5 Flash engine
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Display all listings on the home dashboard
 module.exports.index = async (req, res) => {
