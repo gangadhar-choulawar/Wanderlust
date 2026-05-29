@@ -15,8 +15,8 @@ console.log("Environment API Key exists:", !!process.env.GEMINI_API_KEY);
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Use a stable, generally available model
-const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-
+// This name is likely incorrect/unsupported
+const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
 router.post("/:id/discover", wrapAsync(async (req, res) => {
     const { location, country, prompt } = req.body;
 
