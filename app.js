@@ -7,20 +7,18 @@ const ejsMate = require("ejs-mate");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const passport = require("passport");
+const flash = require("connect-flash"); // IMPORTANT: Ensure this is installed
 
 async function initApp() {
-    // 1. Database Connection
     await mongoose.connect(process.env.ATLASDB_URL);
     console.log("Connected to DB");
 
-    // 2. Session Store
     const store = MongoStore.create({
         mongoUrl: process.env.ATLASDB_URL,
         crypto: { secret: process.env.SECRET },
         touchAfter: 24 * 3600,
     });
 
-    // 3. Middlewares
     app.engine('ejs', ejsMate);
     app.set("view engine", "ejs");
     app.set("views", path.join(__dirname, "views"));
@@ -39,14 +37,22 @@ async function initApp() {
         }
     }));
 
+    app.use(flash());
     app.use(passport.initialize());
     app.use(passport.session());
 
+    // GLOBAL MIDDLEWARE: Fixes 'currUser' ReferenceError
+    app.use((req, res, next) => {
+        res.locals.currUser = req.user;
+        res.locals.success = req.flash("success");
+        res.locals.error = req.flash("error");
+        next();
+    });
 
     app.get("/", (req, res) => {
         res.redirect("/listings");
     });
-    // 4. Routers
+
     const listingRouter = require("./routes/listing.js");
     const reviewRouter = require("./routes/review.js");
     const userRouter = require("./routes/user.js");
@@ -55,12 +61,10 @@ async function initApp() {
     app.use("/listings/:id/reviews", reviewRouter);
     app.use("/", userRouter);
 
-    // 5. Start Server
     const port = process.env.PORT || 8080;
     app.listen(port, () => console.log(`Server listening on port ${port}`));
 }
 
-// EXECUTION
 initApp().catch(err => {
     console.error("FATAL INITIALIZATION ERROR:", err);
     process.exit(1);
