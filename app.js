@@ -26,7 +26,7 @@ async function initApp() {
     
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
-    app.use(express.static(path.join(__dirname, "public"))); // Crucial for CSS/JS
+    app.use(express.static(path.join(__dirname, "public")));
 
     // 3. Session Store
     const store = MongoStore.create({
@@ -65,7 +65,7 @@ async function initApp() {
     app.use("/listings/:id/reviews", reviewRouter);
     app.use("/", userRouter);
 
-    // 6. 404 Handler
+    // 6. 404 Handler (Updated syntax for path-to-regexp)
     app.all("*", (req, res, next) => {
         res.status(404).send("Page Not Found");
     });
@@ -73,6 +73,7 @@ async function initApp() {
     // 7. Global Error Handler
     app.use((err, req, res, next) => {
         let { statusCode = 500, message = "Something went wrong" } = err;
+        // Ensure you have an error.ejs file in your views folder
         res.status(statusCode).render("error.ejs", { message });
     });
 
