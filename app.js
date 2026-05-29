@@ -1,4 +1,12 @@
-// ... [Your imports at the top] ...
+require('dotenv').config();
+const express = require("express");
+const app = express();
+const mongoose = require("mongoose");
+const path = require("path");
+const ejsMate = require("ejs-mate");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const passport = require("passport");
 
 async function initApp() {
     // 1. Database Connection
@@ -19,7 +27,6 @@ async function initApp() {
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    // --- SINGLE SESSION MIDDLEWARE BLOCK ---
     app.use(session({ 
         store, 
         secret: process.env.SECRET, 
@@ -31,7 +38,6 @@ async function initApp() {
             httpOnly: true,
         }
     }));
-    // ---------------------------------------
 
     app.use(passport.initialize());
     app.use(passport.session());
