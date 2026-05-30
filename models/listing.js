@@ -9,7 +9,11 @@ const listingSchema = new Schema({
         url: {
             type: String,
             default: "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?auto=format&fit=crop&w=800&q=60",
-            set: (v) => v === "" ? "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?auto=format&fit=crop&w=800&q=60" : v,
+            // FIXED: Safely check if the string value itself is empty or an object before transforming it
+            set: (v) => {
+                if (typeof v === "object" && v !== null) return v.url || "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?auto=format&fit=crop&w=800&q=60";
+                return v === "" ? "https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?auto=format&fit=crop&w=800&q=60" : v;
+            }
         },
         filename: { type: String, default: "listingimage" }
     },
@@ -18,11 +22,10 @@ const listingSchema = new Schema({
     country: String,
     reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
     owner: { type: Schema.Types.ObjectId, ref: "User" },
-    category:{
-        type:String,
-       enum: ["Trending", "Rooms", "Iconic Cities", "Mountains", "Castles", "Amazing Pools", "Camping", "Farms", "Arctic", "Domes", "Boats"],
+    category: {
+        type: String,
+        enum: ["Trending", "Rooms", "Iconic Cities", "Mountains", "Castles", "Amazing Pools", "Camping", "Farms", "Arctic", "Domes", "Boats"],
     }
-
 });
 
 listingSchema.post("findOneAndDelete", async (listing) => {

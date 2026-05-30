@@ -4,8 +4,8 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 // Initialize the core Google Generative AI client instance securely using your Render Environment Variables
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// FIXED: Migrated to an active production model to fix the 404 endpoint rejection entirely
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+// Configured to Google's standard flagship production model
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 // Display all listings on the home dashboard
 module.exports.index = async (req, res) => {
@@ -13,36 +13,40 @@ module.exports.index = async (req, res) => {
     res.render("listings/index.ejs", { allListings, category: null, search: null });
 };
 
-// Render specific listing page details accompanied by static AI-generated localized highlights
+// Render specific listing page details cleanly without page-load API blocks
 module.exports.showListing = async (req, res) => {
     let { id } = req.params;
+    console.log("=== DEBUG STEP 1: Route Entered successfully with ID:", id);
     
-    // 1. Fetch listing and populate its reviews
-    const listing = await Listing.findById(id).populate("reviews");
-    
-    if (!listing) {
-        req.flash("error", "Listing does not exist!");
-        return res.redirect("/listings");
-    }
-    
-    // 2. Initialize a default string for template safety
-    let aiRecommendations = "";
-
     try {
-        // 3. Request tailored snapshot information from Gemini about this specific listing
-        const aiPrompt = `You are a localized expert travel guide. The user is viewing a vacation listing titled "${listing.title}" located in "${listing.location}, ${listing.country}". Provide exactly 3 short, highly unique bullet points of local hidden gems, must-do activities, or local food recommendations right near this area. Keep it concise.`;
+        console.log("=== DEBUG STEP 2: Requesting Mongoose to find listing and populate...");
+        const listing = await Listing.findById(id)
+            .populate({
+                path: "reviews",
+                populate: { path: "author" }
+            })
+            .populate("owner");
+            
+        console.log("=== DEBUG STEP 3: Mongoose successfully returned listing:", listing ? listing.title : "NULL");
         
-        const result = await model.generateContent(aiPrompt);
-        const response = await result.response;
-        aiRecommendations = response.text();
-    } catch (apiErr) {
-        console.error("Gemini API Error in showListing:", apiErr);
-        // Fallback text ensures your listing page still loads beautifully even if the API experiences network latency
-        aiRecommendations = "• Local travel tips are temporarily unavailable. Enjoy your stay!";
+        if (!listing) {
+            req.flash("error", "Listing does not exist!");
+            return res.redirect("/listings");
+        }
+
+        if (!listing.owner) {
+            listing.owner = { username: "Anonymous Host" };
+        }
+        
+        console.log("=== DEBUG STEP 4: Attempting to render listings/show.ejs...");
+        res.render("listings/show.ejs", { listing, aiRecommendations: "" });
+        console.log("=== DEBUG STEP 5: res.render completed cleanly!");
+
+    } catch (dbErr) {
+        console.error("=== DEBUG CRITICAL DATABASE ERROR ===", dbErr);
+        req.flash("error", "Something went wrong loading this listing profile.");
+        res.redirect("/listings");
     }
-    
-    // 4. Pass 'aiRecommendations' right into your EJS template alongside the listing object
-    res.render("listings/show.ejs", { listing, aiRecommendations });
 };
 
 // Render form to register a new vacation rental property

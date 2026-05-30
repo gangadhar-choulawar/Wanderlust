@@ -1,51 +1,112 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="row mt-3">
+    <div class="col-8 offset-3">
+        <h3><%= listing.title %></h3>
+    </div>
+
+    <div class="card col-6 offset-3 show-card listing-card">
+        <img src="<%= listing.image.url %>" class="card-img-top show-img" alt="listing_image">
+        <div class="card-body">
+            <p class="card-text">Owned by <i><%= listing.owner.username %></i></p>
+            <p class="card-text"><%= listing.description %></p>
+            <p class="card-text">&#8377; <%= listing.price.toLocaleString("en-IN") %> / night</p>
+            <p class="card-text"><%= listing.location %></p>
+            <p class="card-text"><%= listing.country %></p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3 mb-4">
+    <div class="col-6 offset-3 border p-4 rounded shadow-sm bg-light">
+        <h4 class="text-danger font-weight-bold mb-3">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Local Travel Guide
+        </h4>
+        
+        <div class="input-group mb-3">
+            <input type="text" id="ai-prompt" class="form-control" placeholder="Ask about local food, hidden gems, or safety tips...">
+            <button class="btn btn-danger" type="button" id="ai-btn">Ask AI</button>
+        </div>
+
+        <div id="ai-loader" class="d-none my-2 text-center text-danger">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2">Consulting local experts...</span>
+        </div>
+        
+        <div id="ai-response" class="card-text d-none border p-3 bg-white rounded" style="white-space: pre-wrap; color: #333;"></div>
+    </div>
+</div>
+
+<% if (listing.reviews && listing.reviews.length > 0) { %>
+    <hr />
+    <div class="col-8 offset-3">
+        <p><b>All Reviews</b></p>
+        <div class="row">
+            <% for(let review of listing.reviews) { %>
+                <div class="card col-5 ms-3 mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">@<%= review.author.username %></h5>
+                        <p class="card-text"><%= review.comment %></p>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+<% } %>
+
 <script>
-    const aiBtn = document.getElementById("ai-btn");
-    const aiInput = document.getElementById("ai-prompt");
-    const aiResponse = document.getElementById("ai-response");
-    const aiLoader = document.getElementById("ai-loader");
+    document.addEventListener("DOMContentLoaded", () => {
+        const aiBtn = document.getElementById("ai-btn");
+        const aiInput = document.getElementById("ai-prompt");
+        const aiResponse = document.getElementById("ai-response");
+        const aiLoader = document.getElementById("ai-loader");
 
-    aiBtn.addEventListener("click", async () => {
-        const prompt = aiInput.value;
-        if (!prompt) return alert("Please enter a question!");
+        if (!aiBtn || !aiInput) return;
 
-        aiLoader.classList.remove("d-none");
-        aiResponse.classList.add("d-none");
-        aiInput.value = "";
+        aiBtn.addEventListener("click", async (event) => {
+            event.preventDefault();
 
-        try {
-            const response = await fetch("/listings/discover", { 
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    location: "<%= listing.location %>",
-                    country: "<%= listing.country %>",
-                    prompt: prompt
-                })
-            });
+            const prompt = aiInput.value.trim();
+            if (!prompt) return alert("Please enter a question!");
 
-            // UPGRADED ERROR CHECK: Pulls raw error logs directly from your Express catch block
-            if (!response.ok) {
+            aiLoader.classList.remove("d-none");
+            aiResponse.classList.add("d-none");
+
+            try {
+                const response = await fetch("/listings/discover", { 
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    // Safely handles strings containing quotes or special symbols
+                    body: JSON.stringify({
+                        location: <%- JSON.stringify(listing.location) %>,
+                        country: <%- JSON.stringify(listing.country) %>,
+                        prompt: prompt
+                    })
+                });
+
+                if (!response.ok) {
+                    aiLoader.classList.add("d-none");
+                    const errorData = await response.json().catch(() => ({}));
+                    return alert(`AI Rejection: ${errorData.details || "API Quota exhausted."}`);
+                }
+
+                const data = await response.json();
+                
                 aiLoader.classList.add("d-none");
-                const errorData = await response.json().catch(() => ({}));
-                const trueReason = errorData.details || "Check Render dashboard backend terminal console.";
-                return alert(`AI Server Rejection (Status ${response.status}):\n\n--> ${trueReason}`);
+                aiResponse.classList.remove("d-none");
+                
+                const formattedAnswer = data.answer
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, "<br>");
+
+                aiResponse.innerHTML = `<strong><i class="fa-solid fa-robot"></i> AI Guide:</strong> <hr> ${formattedAnswer}`;
+                aiInput.value = "";
+                
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                aiLoader.classList.add("d-none");
+                alert("Could not complete the request. Ensure your server is active.");
             }
-
-            const data = await response.json();
-            
-            aiLoader.classList.add("d-none");
-            aiResponse.classList.remove("d-none");
-            
-            const formattedAnswer = data.answer
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, "<br>");
-
-            aiResponse.innerHTML = `<strong><i class="fa-solid fa-robot"></i> AI Travel Expert:</strong> <hr> ${formattedAnswer}`;
-            
-        } catch (error) {
-            console.error("Error details:", error);
-            aiLoader.classList.add("d-none");
-            alert("Could not complete the request. Check your internet connection.");
-        }
+        });
     });
 </script>
